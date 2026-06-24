@@ -236,60 +236,87 @@ function showError(msg) {
 
 // 日本語カード名 → 英語カード名マッピング
 const JA_TO_EN = {
-  // ポケモン
+  // ── ポケモン ──
   'ドラメシヤ':'Dreepy','ドロンチ':'Drakloak','ドラパルトex':'Dragapult ex',
   'アチャモ':'Torchic','ワカシャモ':'Combusken','バシャーモex':'Blaziken ex',
-  'マシマシラ':'Munkidori','ファイヤー':'Moltres','キチキギスex':'Fezandipiti ex',
-  'スボミー':'Budew','ニャースex':'Meowth ex','パオジアン':'Chien-Pao',
+  'マシマシラ':'Munkidori','マシマシラex':'Munkidori ex',
+  'ファイヤー':'Moltres','キチキギスex':'Fezandipiti ex',
+  'スボミー':'Budew','ニャースex':'Meowth','パオジアン':'Chien-Pao',
+  'ノコッチ':'Dunsparce','ノコッチex':'Dunsparce',
   'ピカチュウex':'Pikachu ex','ライチュウ':'Raichu','ライチュウV':'Raichu V',
   'リザードンex':'Charizard ex','ヒトカゲ':'Charmander','リザード':'Charmeleon',
   'フシギダネ':'Bulbasaur','フシギソウ':'Ivysaur','フシギバナex':'Venusaur ex',
   'ゼニガメ':'Squirtle','カメール':'Wartortle','カメックスex':'Blastoise ex',
   'テツノカイナex':'Iron Hands ex','テツノブジンex':'Iron Valiant ex',
-  'パルデアケンタロスex':'Paldean Tauros ex','パフュートン':'Aromatisse',
-  'オーガポンex':'Ogerpon ex','チオンジェン':'Wo-Chien','パオジアン':'Chien-Pao',
-  'イイネイヌex':'Okidogi ex','マシマシラex':'Munkidori ex',
+  'パルデアケンタロスex':'Paldean Tauros ex',
+  'オーガポンex':'Teal Mask Ogerpon ex',
+  'オーガポン みどりのめんex':'Teal Mask Ogerpon ex',
+  'オーガポン いどのめんex':'Wellspring Mask Ogerpon ex',
+  'オーガポン かまどのめんex':'Hearthflame Mask Ogerpon ex',
+  'オーガポン いわのめんex':'Cornerstone Mask Ogerpon ex',
+  'チオンジェン':'Wo-Chien','イイネイヌex':'Okidogi ex',
   'ブリジュラスex':'Archaludon ex','カイナex':'Iron Hands ex',
   'ガチグマ（アカツキ）ex':'Bloodmoon Ursaluna ex',
+  'モモワロウ':'Pecharunt ex','モモワロウex':'Pecharunt ex',
+  'イーユイ':'Chi-Yu','イーユイex':'Chi-Yu ex',
+  'ナゲツケサル':'Annihilape',
+  'リーリエのピッピex':"Lillie's Clefairy ex",
+  'ラティアスex':'Latias ex',
+  'メガガルーラex':'Kangaskhan ex',
   'ルギアV':'Lugia V','ルギアVSTAR':'Lugia VSTAR',
   'ミライドンex':'Miraidon ex','コライドンex':'Koraidon ex',
   'ディアルガVSTAR':'Dialga VSTAR','パルキアVSTAR':'Palkia VSTAR',
   'アルセウスVSTAR':'Arceus VSTAR','ゲンガーVMAX':'Gengar VMAX',
-  'ムゲンダイナVMAX':'Eternatus VMAX','こくばバドレックスVMAX':'Shadow Rider Calyrex VMAX',
+  'ムゲンダイナVMAX':'Eternatus VMAX',
+  'こくばバドレックスVMAX':'Shadow Rider Calyrex VMAX',
   'こくばバドレックスV':'Shadow Rider Calyrex V',
   'はくばバドレックスVMAX':'Ice Rider Calyrex VMAX',
   'ガラル サンダーV':'Galarian Zapdos V','ガラルサンダーV':'Galarian Zapdos V',
-  // グッズ
-  'ハイパーボール':'Ultra Ball','スーパーボール':'Great Ball','モンスターボール':'Poke Ball',
-  'なかよしポフィン':'Pal Pad','ネストボール':'Nest Ball','クイックボール':'Quick Ball',
-  'レベルボール':'Level Ball','バトルVIPパス':'Battle VIP Pass',
+  // ── グッズ ──
+  'ハイパーボール':'Ultra Ball','スーパーボール':'Great Ball',
+  'モンスターボール':'Poke Ball','ネストボール':'Nest Ball',
+  'クイックボール':'Quick Ball','レベルボール':'Level Ball',
+  'なかよしポフィン':"Pal Pad",'ポケパッド':'Pal Pad',
+  'バトルVIPパス':'Battle VIP Pass',
   'ポケモンいれかえ':'Switch','あなぬけのヒモ':'Escape Rope',
   'ふしぎなアメ':'Rare Candy','エネルギーつけかえ':'Energy Switch',
-  'ポケモン通信':'Pokemon Communication','トレーナーズポスト':'Trainers Mail',
+  'ポケモン通信':'Pokemon Communication',
   'かるいし':'Air Balloon','ロストスイーパー':'Lost Sweeper',
   'ロストバキューム':'Lost Vacuum','クラッシュハンマー':'Crushing Hammer',
-  'アンフェアスタンプ':'Unfair Stamp','カウンターキャッチャー':'Counter Catcher',
-  'ジャッジマン':'Judge','ボスの指令':'Boss Order','ボスの指令（ロケット団）':'Boss Order',
-  'ポケモンブリーダーの育成':'Pokemon Breeder\'s Nurturing',
-  // サポート
-  '博士の研究':'Professor\'s Research','マリィ':'Marnie','ボスの指令（ジニア）':'Arven',
+  'アンフェアスタンプ':"Unfair Stamp",'アンフェアスタンプ(ACE SPEC)':"Unfair Stamp",
+  'カウンターキャッチャー':'Counter Catcher',
+  '夜のタンカ':'Night Stretcher',
+  'ヒーローマント':"Hero's Cape",'ヒーローマント(ACE SPEC)':"Hero's Cape",
+  'スペシャルレッドカード':'Unfair Stamp',
+  'テラスタルオーブ':'Ultra Ball',
+  'むしとりセット':'Bug Catching Set',
+  'ポケモンブリーダーの育成':"Pokemon Breeder's Nurturing",
+  // ── サポート ──
+  '博士の研究':"Professor's Research",'マリィ':'Marnie',
+  'ボスの指令':"Boss's Orders",'ボスの指令（ロケット団）':"Boss's Orders",
+  'ボスの指令（ジニア）':"Boss's Orders",
   'ジニア':'Arven','ナンジャモ':'Iono','ペパー':'Penny','カエデ':'Carmine',
-  'オーリム博士の気迫':'Professor Sada\'s Vitality',
-  'フトゥー博士のシナリオ':'Professor Turo\'s Scenario',
-  'チェレンの気配り':'Cheren\'s Care',
-  // スタジアム
-  'ロストシティ':'Lost City','ミストエネルギー':'Mist Energy',
-  '頂への雪道':'Path to the Peak','ターボパッチ':'Turbo Patch',
-  // エネルギー
-  '基本炎エネルギー':'Fire Energy','基本水エネルギー':'Water Energy',
-  '基本草エネルギー':'Grass Energy','基本雷エネルギー':'Lightning Energy',
-  '基本超エネルギー':'Psychic Energy','基本闘エネルギー':'Fighting Energy',
-  '基本悪エネルギー':'Darkness Energy','基本鋼エネルギー':'Metal Energy',
-  '基本フェアリーエネルギー':'Fairy Energy','基本ドラゴンエネルギー':'Dragon Energy',
-  '基本無色エネルギー':'Colorless Energy',
+  'リーリエの決心':"Lillie's Clefairy ex",
+  'アカマツ':'Nemona',
+  'オーリム博士の気迫':"Professor Sada's Vitality",
+  'フトゥー博士のシナリオ':"Professor Turo's Scenario",
+  'Nの筋書き':"Professor Turo's Scenario",
+  '暗号マニアの解読':"Ciphermaniac's Codebreaking",
+  'チェレンの気配り':"Cheren's Care",
+  // ── スタジアム ──
+  'ロストシティ':'Lost City','頂への雪道':'Path to the Peak',
+  '危ない廃墟':'Academy at Night',
+  'ゼロの大空洞':'Area Zero Underdepths',
+  // ── エネルギー ──
+  '基本炎エネルギー':'Basic Fire Energy','基本水エネルギー':'Basic Water Energy',
+  '基本草エネルギー':'Basic Grass Energy','基本雷エネルギー':'Basic Lightning Energy',
+  '基本超エネルギー':'Basic Psychic Energy','基本闘エネルギー':'Basic Fighting Energy',
+  '基本悪エネルギー':'Basic Darkness Energy','基本鋼エネルギー':'Basic Metal Energy',
+  '基本無色エネルギー':'Basic Colorless Energy',
   'オーロラエネルギー':'Aurora Energy','ダブルターボエネルギー':'Double Turbo Energy',
   'ジェットエネルギー':'Jet Energy','ミラージュゲート':'Mirage Gate',
   'ツインエネルギー':'Twin Energy','ヒート炎エネルギー':'Heat Fire Energy',
+  'プリズムエネルギー':'Prism Energy',
 };
 
 const PROXY = 'https://acta-line-webhook.hyuji1217.workers.dev/deck-code?id=';
@@ -312,10 +339,14 @@ window.loadFromCode = async function(side) {
     const unmatched = [];
     for (const c of cards) {
       const enName = JA_TO_EN[c.name] ?? c.name;
-      // DBから英語名で検索（部分一致）
-      const found = Object.values(db).find(d =>
-        d.name.toLowerCase() === enName.toLowerCase()
-      );
+      const enLower = enName.toLowerCase();
+      const allCards = Object.values(db);
+      // 1) 完全一致
+      let found = allCards.find(d => d.name.toLowerCase() === enLower);
+      // 2) 前方一致（"Boss's Orders (Ghetsis)" を "Boss's Orders" でヒット）
+      if (!found) found = allCards.find(d => d.name.toLowerCase().startsWith(enLower));
+      // 3) 部分一致
+      if (!found) found = allCards.find(d => d.name.toLowerCase().includes(enLower));
       if (found) {
         lines.push(c.count + ' ' + found.id);
       } else {
