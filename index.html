@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ポケカシミュレーター</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #eee; padding: 24px; }
+  h1 { color: #f5a623; margin-bottom: 24px; font-size: 1.6rem; }
+
+  .container { max-width: 900px; margin: 0 auto; }
+
+  .deck-area { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .deck-box { background: #16213e; border-radius: 12px; padding: 16px; }
+  .deck-box h2 { color: #a8c8f0; font-size: 1rem; margin-bottom: 8px; }
+  .deck-box textarea {
+    width: 100%; height: 280px; background: #0f3460; color: #eee;
+    border: 1px solid #334; border-radius: 8px; padding: 8px;
+    font-family: monospace; font-size: 0.85rem; resize: vertical;
+  }
+  .deck-hint { font-size: 0.75rem; color: #888; margin-top: 6px; }
+
+  .controls { display: flex; gap: 12px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+  .controls label { color: #aaa; font-size: 0.9rem; }
+  .controls input[type=number] {
+    width: 80px; padding: 6px 8px; background: #0f3460;
+    border: 1px solid #334; border-radius: 6px; color: #eee; font-size: 0.9rem;
+  }
+  button {
+    padding: 10px 28px; background: #f5a623; color: #1a1a2e;
+    border: none; border-radius: 8px; font-weight: bold; font-size: 1rem;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #progress { font-size: 0.9rem; color: #aaa; min-width: 120px; }
+
+  .result-box {
+    background: #16213e; border-radius: 12px; padding: 20px;
+    display: none; border: 2px solid #f5a623;
+  }
+  .result-box h2 { color: #f5a623; margin-bottom: 16px; }
+
+  .bars { display: flex; height: 32px; border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .bar-a { background: #4a90e2; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; }
+  .bar-b { background: #e24a4a; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; }
+  .bar-d { background: #666; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .stat { background: #0f3460; border-radius: 8px; padding: 12px; text-align: center; }
+  .stat .val { font-size: 1.8rem; font-weight: bold; color: #f5a623; }
+  .stat .lbl { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
+
+  .error { color: #ff6b6b; background: #2d0000; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: none; }
+
+  .sample-btn {
+    background: #334; color: #aaa; padding: 6px 14px;
+    font-size: 0.8rem; font-weight: normal; border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🃏 ポケカシミュレーター</h1>
+
+  <div class="deck-area">
+    <div class="deck-box">
+      <h2>デッキ A</h2>
+      <textarea id="deck-a" placeholder="カードIDまたはカード名を1行1枚で入力&#10;例:&#10;sv9-001&#10;sv9-001&#10;sv9-002&#10;...合計60枚"></textarea>
+      <div class="deck-hint">カードID（例: sv9-001）または名前（英語）を60行</div>
+    </div>
+    <div class="deck-box">
+      <h2>デッキ B</h2>
+      <textarea id="deck-b" placeholder="カードIDまたはカード名を1行1枚で入力&#10;例:&#10;sv9-001&#10;sv9-001&#10;sv9-002&#10;...合計60枚"></textarea>
+      <div class="deck-hint">カードID（例: sv9-001）または名前（英語）を60行</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <label>試行回数：<input type="number" id="iterations" value="1000" min="100" max="10000" step="100"></label>
+    <button id="run-btn" onclick="runSim()">シミュレーション開始</button>
+    <button class="sample-btn" onclick="loadSample()">サンプルデッキを読み込む</button>
+    <span id="progress"></span>
+  </div>
+
+  <div class="error" id="error-box"></div>
+
+  <div class="result-box" id="result-box">
+    <h2>結果</h2>
+    <div class="bars" id="bars"></div>
+    <div class="stats" id="stats"></div>
+  </div>
+</div>
+
+<script type="module">
+// cards.jsonを読み込んでシミュレーターを初期化
+let cardDb = null;
+let sim = null;
+
+async function loadCardDb() {
+  if (cardDb) return cardDb;
+  const res = await fetch('./data/cards.json');
+  if (!res.ok) throw new Error('data/cards.json が見つかりません。fetch-cards.js を先に実行してください。');
+  cardDb = await res.json();
+  return cardDb;
+}
+
+function parseDecklist(text, db) {
+  const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
+  const deck = [];
+  const errors = [];
+
+  for (const line of lines) {
+    // "4 Pikachu" 形式または "sv9-001" 形式を許容
+    const match = line.match(/^(\d+)\s+(.+)$/) || [null, '1', line];
+    const count = parseInt(match[1]) || 1;
+    const query = match[2].trim();
+
+    // IDで直接検索
+    if (db[query]) {
+      for (let i = 0; i < count; i++) deck.push(db[query]);
+      continue;
+    }
+    // 名前（部分一致）で検索
+    const found = Object.values(db).find(c => c.name.toLowerCase() === query.toLowerCase());
+    if (found) {
+      for (let i = 0; i < count; i++) deck.push(found);
+    } else {
+      errors.push(query);
+    }
+  }
+
+  return { deck, errors };
+}
+
+window.runSim = async function() {
+  const btn = document.getElementById('run-btn');
+  const prog = document.getElementById('progress');
+  const errBox = document.getElementById('error-box');
+  const resultBox = document.getElementById('result-box');
+
+  btn.disabled = true;
+  errBox.style.display = 'none';
+  resultBox.style.display = 'none';
+  prog.textContent = 'カードDB読み込み中…';
+
+  try {
+    const db = await loadCardDb();
+    prog.textContent = 'デッキ解析中…';
+
+    const textA = document.getElementById('deck-a').value;
+    const textB = document.getElementById('deck-b').value;
+    const { deck: deckA, errors: errA } = parseDecklist(textA, db);
+    const { deck: deckB, errors: errB } = parseDecklist(textB, db);
+
+    const allErrors = [...errA.map(e => `[A] ${e}`), ...errB.map(e => `[B] ${e}`)];
+    if (allErrors.length > 0) {
+      showError('見つからないカード:\n' + allErrors.join('\n'));
+      btn.disabled = false; prog.textContent = '';
+      return;
+    }
+    if (deckA.length < 20 || deckB.length < 20) {
+      showError(`デッキが小さすぎます（A:${deckA.length}枚 / B:${deckB.length}枚）。`);
+      btn.disabled = false; prog.textContent = '';
+      return;
+    }
+
+    const iters = parseInt(document.getElementById('iterations').value) || 1000;
+    prog.textContent = `0 / ${iters} 完了…`;
+
+    // バンドル済みシミュレーターをインポート（src/はTypeScriptのまま、dist/がビルド成果物）
+    const { runSimulation, initSimulator } = await import('./dist/simulator.js');
+    initSimulator(db);
+
+    const result = await runSimulation(deckA, deckB, iters, (done, total) => {
+      prog.textContent = `${done} / ${total} 完了…`;
+    });
+
+    prog.textContent = `${iters} / ${iters} 完了`;
+    showResult(result);
+  } catch(e) {
+    showError(e.message);
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+function showResult(r) {
+  const box = document.getElementById('result-box');
+  box.style.display = 'block';
+
+  // バー
+  document.getElementById('bars').innerHTML = `
+    <div class="bar-a" style="width:${r.winRateA}%">${r.winRateA}%</div>
+    <div class="bar-d" style="width:${r.drawRate}%">${r.drawRate > 2 ? r.drawRate+'%' : ''}</div>
+    <div class="bar-b" style="width:${r.winRateB}%">${r.winRateB}%</div>
+  `;
+
+  // 数値
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="val" style="color:#4a90e2">${r.winRateA}%</div><div class="lbl">デッキA 勝率</div></div>
+    <div class="stat"><div class="val" style="color:#e24a4a">${r.winRateB}%</div><div class="lbl">デッキB 勝率</div></div>
+    <div class="stat"><div class="val">${r.avgTurns}</div><div class="lbl">平均ターン数</div></div>
+    <div class="stat"><div class="val">${r.iterations}</div><div class="lbl">試行回数</div></div>
+    <div class="stat"><div class="val">${r.winsA}</div><div class="lbl">A 勝ち数</div></div>
+    <div class="stat"><div class="val">${r.winsB}</div><div class="lbl">B 勝ち数</div></div>
+    ${r.draws > 0 ? `<div class="stat"><div class="val">${r.draws}</div><div class="lbl">引き分け</div></div>` : ''}
+  `;
+}
+
+function showError(msg) {
+  const b = document.getElementById('error-box');
+  b.textContent = msg; b.style.display = 'block';
+}
+
+window.loadSample = function() {
+  // デッキが確定したらここにカードIDを入れてください
+  // 形式: "4 カードID" を1行ずつ（合計60枚）
+  // 例: "4 sv8pt5-28" → Pikachu ex を4枚
+  document.getElementById('deck-a').value = '';
+  document.getElementById('deck-b').value = '';
+  alert('デッキAとBのテキストエリアにカードIDを入力してください。\n形式: "4 sv8pt5-28" など（枚数 + スペース + ID）');
+};
+</script>
+</body>
+</html>
