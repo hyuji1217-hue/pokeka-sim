@@ -112,7 +112,7 @@ function attachEnergy(state, handIndex, targetSlot) {
   if (!card || card.supertype !== "Energy") return s;
   const target = targetSlot === -1 ? p.active : p.bench[targetSlot];
   if (!target) return s;
-  const energyType = card.types[0] ?? "Colorless";
+  const energyType = inferEnergyType(card);
   target.energies.push(energyType);
   p.hand.splice(handIndex, 1);
   p.discard.push(card);
@@ -235,11 +235,28 @@ function applyStatusRecovery(state) {
   }
 }
 function canUseAttack(pokemon, attack) {
-  const cost = attack.cost.filter((c) => c !== "Colorless");
-  for (const needed of cost) {
-    if (!pokemon.energies.includes(needed)) return false;
+  const available = [...pokemon.energies];
+  for (const needed of attack.cost) {
+    if (needed === "Colorless") continue;
+    const idx = available.indexOf(needed);
+    if (idx === -1) return false;
+    available.splice(idx, 1);
   }
-  return pokemon.energies.length >= attack.cost.length;
+  const colorlessCost = attack.cost.filter((c) => c === "Colorless").length;
+  return available.length >= colorlessCost;
+}
+function inferEnergyType(card) {
+  if (card.types.length > 0) return card.types[0];
+  const n = card.name.toLowerCase();
+  if (n.includes("fire")) return "Fire";
+  if (n.includes("water")) return "Water";
+  if (n.includes("grass")) return "Grass";
+  if (n.includes("lightning")) return "Lightning";
+  if (n.includes("fighting")) return "Fighting";
+  if (n.includes("darkness") || n.includes("dark")) return "Darkness";
+  if (n.includes("metal") || n.includes("steel")) return "Metal";
+  if (n.includes("psychic")) return "Psychic";
+  return "Colorless";
 }
 function applyWeaknessResistance(damage, attacker, defender, state) {
   const defCard = getCardData(state, defender.cardId);
@@ -333,7 +350,7 @@ function findBestAttack(me, opp, state) {
     const atk = card.attacks[i];
     if (!canUseAttack(me.active, atk)) continue;
     const dmg = estimateDamage(atk, me.active, opp.active, state);
-    if (dmg > bestDmg) {
+    if (dmg > 0 && dmg > bestDmg) {
       bestDmg = dmg;
       bestIdx = i;
     }
@@ -355,7 +372,7 @@ function estimateDamage(attack, attacker, defender, state) {
 }
 
 // src/simulator.ts
-var MAX_TURNS = 30;
+var MAX_TURNS = 200;
 function runGame(deckA, deckB, firstPlayer = 0, verbose = false) {
   let state = initGame(deckA, deckB);
   state.activePlayer = firstPlayer;
