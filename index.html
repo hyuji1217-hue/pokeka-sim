@@ -58,6 +58,18 @@
     background: #334; color: #aaa; padding: 6px 14px;
     font-size: 0.8rem; font-weight: normal; border-radius: 6px;
   }
+  .deck-code-row {
+    display: flex; gap: 6px; margin-bottom: 8px;
+  }
+  .deck-code-row input {
+    flex: 1; padding: 6px 10px; background: #0f3460; border: 1px solid #334;
+    border-radius: 6px; color: #eee; font-size: 0.82rem; font-family: monospace;
+  }
+  .code-btn {
+    padding: 6px 14px; font-size: 0.82rem; font-weight: bold;
+    background: #2a4a7f; color: #eee; border: none; border-radius: 6px; cursor: pointer;
+  }
+  .code-btn:hover { background: #3a5a9f; }
 </style>
 </head>
 <body>
@@ -67,13 +79,21 @@
   <div class="deck-area">
     <div class="deck-box">
       <h2>デッキ A</h2>
-      <textarea id="deck-a" placeholder="カードIDまたはカード名を1行1枚で入力&#10;例:&#10;sv9-001&#10;sv9-001&#10;sv9-002&#10;...合計60枚"></textarea>
-      <div class="deck-hint">カードID（例: sv9-001）または名前（英語）を60行</div>
+      <div class="deck-code-row">
+        <input type="text" id="code-a" placeholder="デッキコード（例: KG88YD-a6t2aC-Gc884c）" maxlength="20">
+        <button class="code-btn" onclick="loadFromCode('a')">読み込み</button>
+      </div>
+      <textarea id="deck-a" placeholder="デッキコードで読み込むか、カードIDを直接入力&#10;例: 4 sv8pt5-73"></textarea>
+      <div class="deck-hint" id="hint-a">デッキコードを貼って「読み込み」を押すか、直接入力</div>
     </div>
     <div class="deck-box">
       <h2>デッキ B</h2>
-      <textarea id="deck-b" placeholder="カードIDまたはカード名を1行1枚で入力&#10;例:&#10;sv9-001&#10;sv9-001&#10;sv9-002&#10;...合計60枚"></textarea>
-      <div class="deck-hint">カードID（例: sv9-001）または名前（英語）を60行</div>
+      <div class="deck-code-row">
+        <input type="text" id="code-b" placeholder="デッキコード（例: KG88YD-a6t2aC-Gc884c）" maxlength="20">
+        <button class="code-btn" onclick="loadFromCode('b')">読み込み</button>
+      </div>
+      <textarea id="deck-b" placeholder="デッキコードで読み込むか、カードIDを直接入力&#10;例: 4 sv8pt5-73"></textarea>
+      <div class="deck-hint" id="hint-b">デッキコードを貼って「読み込み」を押すか、直接入力</div>
     </div>
   </div>
 
@@ -213,6 +233,106 @@ function showError(msg) {
   const b = document.getElementById('error-box');
   b.textContent = msg; b.style.display = 'block';
 }
+
+// 日本語カード名 → 英語カード名マッピング
+const JA_TO_EN = {
+  // ポケモン
+  'ドラメシヤ':'Dreepy','ドロンチ':'Drakloak','ドラパルトex':'Dragapult ex',
+  'アチャモ':'Torchic','ワカシャモ':'Combusken','バシャーモex':'Blaziken ex',
+  'マシマシラ':'Munkidori','ファイヤー':'Moltres','キチキギスex':'Fezandipiti ex',
+  'スボミー':'Budew','ニャースex':'Meowth ex','パオジアン':'Chien-Pao',
+  'ピカチュウex':'Pikachu ex','ライチュウ':'Raichu','ライチュウV':'Raichu V',
+  'リザードンex':'Charizard ex','ヒトカゲ':'Charmander','リザード':'Charmeleon',
+  'フシギダネ':'Bulbasaur','フシギソウ':'Ivysaur','フシギバナex':'Venusaur ex',
+  'ゼニガメ':'Squirtle','カメール':'Wartortle','カメックスex':'Blastoise ex',
+  'テツノカイナex':'Iron Hands ex','テツノブジンex':'Iron Valiant ex',
+  'パルデアケンタロスex':'Paldean Tauros ex','パフュートン':'Aromatisse',
+  'オーガポンex':'Ogerpon ex','チオンジェン':'Wo-Chien','パオジアン':'Chien-Pao',
+  'イイネイヌex':'Okidogi ex','マシマシラex':'Munkidori ex',
+  'ブリジュラスex':'Archaludon ex','カイナex':'Iron Hands ex',
+  'ガチグマ（アカツキ）ex':'Bloodmoon Ursaluna ex',
+  'ルギアV':'Lugia V','ルギアVSTAR':'Lugia VSTAR',
+  'ミライドンex':'Miraidon ex','コライドンex':'Koraidon ex',
+  'ディアルガVSTAR':'Dialga VSTAR','パルキアVSTAR':'Palkia VSTAR',
+  'アルセウスVSTAR':'Arceus VSTAR','ゲンガーVMAX':'Gengar VMAX',
+  'ムゲンダイナVMAX':'Eternatus VMAX','こくばバドレックスVMAX':'Shadow Rider Calyrex VMAX',
+  'こくばバドレックスV':'Shadow Rider Calyrex V',
+  'はくばバドレックスVMAX':'Ice Rider Calyrex VMAX',
+  'ガラル サンダーV':'Galarian Zapdos V','ガラルサンダーV':'Galarian Zapdos V',
+  // グッズ
+  'ハイパーボール':'Ultra Ball','スーパーボール':'Great Ball','モンスターボール':'Poke Ball',
+  'なかよしポフィン':'Pal Pad','ネストボール':'Nest Ball','クイックボール':'Quick Ball',
+  'レベルボール':'Level Ball','バトルVIPパス':'Battle VIP Pass',
+  'ポケモンいれかえ':'Switch','あなぬけのヒモ':'Escape Rope',
+  'ふしぎなアメ':'Rare Candy','エネルギーつけかえ':'Energy Switch',
+  'ポケモン通信':'Pokemon Communication','トレーナーズポスト':'Trainers Mail',
+  'かるいし':'Air Balloon','ロストスイーパー':'Lost Sweeper',
+  'ロストバキューム':'Lost Vacuum','クラッシュハンマー':'Crushing Hammer',
+  'アンフェアスタンプ':'Unfair Stamp','カウンターキャッチャー':'Counter Catcher',
+  'ジャッジマン':'Judge','ボスの指令':'Boss Order','ボスの指令（ロケット団）':'Boss Order',
+  'ポケモンブリーダーの育成':'Pokemon Breeder\'s Nurturing',
+  // サポート
+  '博士の研究':'Professor\'s Research','マリィ':'Marnie','ボスの指令（ジニア）':'Arven',
+  'ジニア':'Arven','ナンジャモ':'Iono','ペパー':'Penny','カエデ':'Carmine',
+  'オーリム博士の気迫':'Professor Sada\'s Vitality',
+  'フトゥー博士のシナリオ':'Professor Turo\'s Scenario',
+  'チェレンの気配り':'Cheren\'s Care',
+  // スタジアム
+  'ロストシティ':'Lost City','ミストエネルギー':'Mist Energy',
+  '頂への雪道':'Path to the Peak','ターボパッチ':'Turbo Patch',
+  // エネルギー
+  '基本炎エネルギー':'Fire Energy','基本水エネルギー':'Water Energy',
+  '基本草エネルギー':'Grass Energy','基本雷エネルギー':'Lightning Energy',
+  '基本超エネルギー':'Psychic Energy','基本闘エネルギー':'Fighting Energy',
+  '基本悪エネルギー':'Darkness Energy','基本鋼エネルギー':'Metal Energy',
+  '基本フェアリーエネルギー':'Fairy Energy','基本ドラゴンエネルギー':'Dragon Energy',
+  '基本無色エネルギー':'Colorless Energy',
+  'オーロラエネルギー':'Aurora Energy','ダブルターボエネルギー':'Double Turbo Energy',
+  'ジェットエネルギー':'Jet Energy','ミラージュゲート':'Mirage Gate',
+  'ツインエネルギー':'Twin Energy','ヒート炎エネルギー':'Heat Fire Energy',
+};
+
+const PROXY = 'https://acta-line-webhook.hyuji1217.workers.dev/deck-code?id=';
+
+window.loadFromCode = async function(side) {
+  const codeEl = document.getElementById('code-' + side);
+  const hintEl = document.getElementById('hint-' + side);
+  const code = codeEl.value.trim();
+  if (!code) { hintEl.textContent = 'デッキコードを入力してください'; return; }
+
+  hintEl.textContent = '読み込み中...';
+  try {
+    const db = await loadCardDb();
+    const res = await fetch(PROXY + encodeURIComponent(code));
+    if (!res.ok) throw new Error('取得失敗 ' + res.status);
+    const { cards, error } = await res.json();
+    if (error) throw new Error(error);
+
+    const lines = [];
+    const unmatched = [];
+    for (const c of cards) {
+      const enName = JA_TO_EN[c.name] ?? c.name;
+      // DBから英語名で検索（部分一致）
+      const found = Object.values(db).find(d =>
+        d.name.toLowerCase() === enName.toLowerCase()
+      );
+      if (found) {
+        lines.push(c.count + ' ' + found.id);
+      } else {
+        lines.push(c.count + ' ' + enName);
+        unmatched.push(c.name);
+      }
+    }
+    document.getElementById('deck-' + side).value = lines.join('\n');
+    if (unmatched.length) {
+      hintEl.textContent = '読込完了（未マッチ: ' + unmatched.join(', ') + '）';
+    } else {
+      hintEl.textContent = '✅ 読込完了（' + cards.length + '種）';
+    }
+  } catch(e) {
+    hintEl.textContent = '❌ ' + e.message;
+  }
+};
 
 window.loadSample = function() {
   // デッキが確定したらここにカードIDを入れてください
