@@ -8,7 +8,7 @@ import {
 } from './types.js';
 import {
   initGame, startTurn, endTurn, useAttack, attachEnergy,
-  playBasicToActive, evolvePokemon, retreat, checkWinCondition,
+  playBasicToActive, evolvePokemon, playTrainer, retreat, checkWinCondition,
   setCardDb,
 } from './game-engine.js';
 import { chooseAction } from './ai-player.js';
@@ -63,16 +63,19 @@ export function runGame(
 
 function setupPhase(state: GameState): GameState {
   let s = { ...state };
+  const firstPlayer = state.activePlayer;
   // 両プレイヤーがバトル場にポケモンを置く
   for (const pi of [0, 1] as PlayerIndex[]) {
+    s.activePlayer = pi; // applyAction がactivePlayerを参照するため先にセット
     let actionCount = 0;
     while (s.players[pi].active === null && actionCount < 10) {
-      const action = chooseAction({ ...s, activePlayer: pi }, pi);
-      s = applyAction(s, { ...action });
-      s.activePlayer = pi; // setupは両プレイヤーが同時に行動
+      const action = chooseAction(s, pi);
+      s = applyAction(s, action);
+      s.activePlayer = pi;
       actionCount++;
     }
   }
+  s.activePlayer = firstPlayer; // 先攻プレイヤーに戻す
   s.phase = 'main';
   return s;
 }
@@ -83,8 +86,17 @@ function applyAction(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'play-pokemon':
       return playBasicToActive(state, action.cardIndex ?? 0);
+    case 'evolve':
+      return evolvePokemon(state, action.cardIndex ?? 0, action.targetSlot ?? -1);
     case 'attach-energy':
       return attachEnergy(state, action.cardIndex ?? 0, action.targetSlot ?? -1);
+    case 'play-trainer':
+      return playTrainer(
+        state,
+        action.cardIndex ?? 0,
+        action.trainerTarget,
+        action.discardIndices,
+      );
     case 'attack':
       return useAttack(state, action.attackIndex ?? 0);
     case 'retreat':
